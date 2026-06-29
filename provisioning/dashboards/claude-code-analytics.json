@@ -70,7 +70,7 @@
                         "editorMode": "builder",
                         "expr": "claude_code_tokens_used_total",
                         "instant": false,
-                        "legendFormat": "__auto",
+                        "legendFormat": "{{user}}",
                         "range": true
                       },
                       "version": "v0"
@@ -154,7 +154,7 @@
                       "spec": {
                         "editorMode": "code",
                         "expr": "claude_code_sessions_total",
-                        "legendFormat": "__auto",
+                        "legendFormat": "{{user}}",
                         "range": true
                       },
                       "version": "v0"
