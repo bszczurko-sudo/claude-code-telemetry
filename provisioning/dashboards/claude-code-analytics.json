@@ -5,8 +5,8 @@
     "name": "adxs49s",
     "namespace": "default",
     "uid": "c4bdeeb6-05a4-46aa-abc9-8388ef25b26f",
-    "resourceVersion": "1782212500082995",
-    "generation": 4,
+    "resourceVersion": "1782773598989997",
+    "generation": 6,
     "creationTimestamp": "2026-06-19T11:08:58Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "775387077521408"
@@ -15,11 +15,11 @@
       "grafana.app/createdBy": "user:cfplky29sc0zkd",
       "grafana.app/managedBy": "classic-file-provisioning",
       "grafana.app/managerId": "default",
-      "grafana.app/sourceChecksum": "8bd8760097db35960456050817816c80",
+      "grafana.app/sourceChecksum": "283d2c5fa61c45e4e8e2eb2d1f771030",
       "grafana.app/sourcePath": "/etc/grafana/provisioning/dashboards/claude-code-analytics.json",
-      "grafana.app/sourceTimestamp": "1782212494000",
+      "grafana.app/sourceTimestamp": "1782773593000",
       "grafana.app/updatedBy": "access-policy:service",
-      "grafana.app/updatedTimestamp": "2026-06-23T11:01:40Z",
+      "grafana.app/updatedTimestamp": "2026-06-29T22:53:18Z",
       "grafana.app/folder": ""
     }
   },
@@ -217,6 +217,96 @@
             "version": "13.0.2"
           }
         }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "PBFA97CFB590B2093"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "builder",
+                        "expr": "claude_code_estimated_cost_total",
+                        "legendFormat": "{{user}}",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Cost of claude usage per 1 million tokens equivalent to $3",
+          "id": 3,
+          "links": [],
+          "title": "Claude Cost",
+          "vizConfig": {
+            "group": "gauge",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {"color": "green", "value": 0},
+                      {"color": "yellow", "value": 0.01},
+                      {"color": "red", "value": 0.1}
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.5,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": true
+                },
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": false,
+                "showThresholdMarkers": true,
+                "sizing": "auto",
+                "sparkline": true,
+                "textMode": "auto"
+              }
+            },
+            "version": "13.0.2"
+          }
+        }
       }
     },
     "layout": {
@@ -247,6 +337,19 @@
               "width": 12,
               "x": 12,
               "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-3"
+              },
+              "height": 8,
+              "width": 12,
+              "x": 0,
+              "y": 8
             }
           }
         ]
