@@ -40,7 +40,11 @@ services:
        - grafana_data:/var/lib/grafana
        - ./provisioning/:/etc/grafana/provisioning
     restart: unless-stopped
-    environment: ["GF_SECURITY_ADMIN_PASSWORD=<from-secrets-manager>"]
+    # Injected at deploy time by ./deploy.sh from Bitwarden Secrets Manager.
+    # The :? guard makes `docker compose up` fail fast if the secret is unset,
+    # rather than silently booting Grafana with a blank/placeholder password.
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?run via ./deploy.sh so bws injects this}
     depends_on: [prometheus, loki]
 
 volumes:

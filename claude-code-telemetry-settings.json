@@ -1,0 +1,15 @@
+{
+  "//": "Claude Code telemetry env block. Merge into ~/.claude/settings.json to make",
+  "//endpoint": "a Claude Code client export OTLP to the collector. localhost is for a",
+  "//remote": "client ON the VM; a remote client points OTEL_EXPORTER_OTLP_ENDPOINT at",
+  "//remote2": "http://<VM_PUBLIC_IP>:4317 (and its IP must be allowed by the SG).",
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_LOGS_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "grpc",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+    "OTEL_METRIC_EXPORT_INTERVAL": "10000",
+    "OTEL_LOGS_EXPORT_INTERVAL": "5000"
+  }
+}
