@@ -27,8 +27,10 @@ exporters:
     # into Prometheus labels so they are queryable.
     resource_to_telemetry_conversion:
       enabled: true
-    # Keep names deterministic: dots -> underscores, no unit/_total suffixes appended.
-    # e.g. claude_code.token.usage -> claude_code_token_usage
+    # Names still get dots -> underscores, a `_total` suffix on counters, and the
+    # metric's unit appended when set — e.g. claude_code.token.usage[tokens] ->
+    # claude_code_token_usage_tokens_total, cost.usage[USD] -> ..._USD_total,
+    # active_time.total[s] -> ..._seconds_total. The dashboard queries these exact names.
     add_metric_suffixes: false
   otlp_http/loki:
     endpoint: http://loki:3100/otlp

@@ -21,8 +21,10 @@ meter = metrics.get_meter("claude-code-test")
 
 # Real Claude Code metric names (dots -> underscores in Prometheus).
 session_count = meter.create_counter("claude_code.session.count", description="CLI sessions started")
-token_usage = meter.create_counter("claude_code.token.usage", description="Tokens used")
-cost_usage = meter.create_counter("claude_code.cost.usage", description="Session cost in USD")
+# unit="tokens"/"USD" so the Prometheus names match real Claude Code exactly:
+# claude_code_token_usage_tokens_total and claude_code_cost_usage_USD_total.
+token_usage = meter.create_counter("claude_code.token.usage", description="Tokens used", unit="tokens")
+cost_usage = meter.create_counter("claude_code.cost.usage", description="Session cost in USD", unit="USD")
 edit_decision = meter.create_counter("claude_code.code_edit_tool.decision", description="Code edit permission decisions")
 
 # Fake addresses (.invalid is reserved by RFC 2606 and can never resolve) so this
