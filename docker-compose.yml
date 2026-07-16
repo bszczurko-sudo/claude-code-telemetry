@@ -7,10 +7,10 @@ services:
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
-    # 4317/4318 are the OTLP ingest ports (SG-allowlisted clients). 8889 is the
-    # Prometheus exporter — only Prometheus needs it (via the docker network), so
-    # bind it to loopback for VM-local debugging only.
-    ports: ["4317:4317", "4318:4318", "127.0.0.1:8889:8889"]
+    # 4317/4318 are the OTLP ingest ports (SG-allowlisted clients). 8889 (the
+    # Prometheus exporter) is scraped by Prometheus over the docker network, so
+    # it is NOT published to the host.
+    ports: ["4317:4317", "4318:4318"]
     restart: unless-stopped
     # Shared ingest token for OTLP bearer-token auth (see .env / .env.example).
     # :? fails fast so the collector never starts with auth effectively disabled.
@@ -26,9 +26,8 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
-    # Only Grafana queries Prometheus (via the docker network); bind to loopback
-    # so 9090 (incl. the admin API) is reachable for VM-local debugging only.
-    ports: ["127.0.0.1:9090:9090"]
+    # 9090 is queried by Grafana over the docker network and is NOT published to
+    # the host. For VM-local debugging use `docker compose exec prometheus ...`.
     restart: unless-stopped
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -41,9 +40,8 @@ services:
 # Grafana queries Loki to visualize this data
   loki:
     image: grafana/loki:3.7.3@sha256:70b9f699fc9bb868b62f1cfd4f787dfa50242f1fd92e6089787d5d7daea75fe8
-    # Only the collector (push) and Grafana (query) reach Loki via the docker
-    # network; bind to loopback for VM-local debugging only.
-    ports: ["127.0.0.1:3100:3100"]
+    # Reached by the collector (push) and Grafana (query) over the docker
+    # network; NOT published to the host.
     volumes:
       - loki_data:/loki
     restart: unless-stopped
