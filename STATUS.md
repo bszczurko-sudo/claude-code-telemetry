@@ -3,10 +3,11 @@
 _Last updated: 2026-07-15 — handoff for Joe_
 
 ## TL;DR
-Real Claude Code telemetry is now flowing into the VM (previously it was only
-synthetic data from `test_telemetry.py`). The stack is healthy. There are **two
-schema mismatches** that mean the existing Grafana dashboard does **not** render
-the real data yet — those are the main things to work on.
+Real Claude Code telemetry is flowing into the VM (previously it was only
+synthetic data from `test_telemetry.py`). The stack is healthy, and the Grafana
+dashboard has been **repointed to the real metric names and now renders real
+data** (verified end-to-end through the Grafana datasource proxy). Remaining work
+is mostly codifying config into the repo — see "Remaining work" below.
 
 ## Environment
 - **VM**: `ubuntu@18.215.170.79` (EC2 `i-0aec393b021b5ef2c`, `ops-claude-code-telemetry`, us-east-1)
@@ -42,34 +43,50 @@ the real data yet — those are the main things to work on.
 | `claude_code_active_time_seconds_total` | 8.4s |
 | user label | `user_email="bszczurko@edgebeamwireless.com"` |
 
-## ⚠️ Gaps to work on (this is the actual work)
-1. **Metric-name mismatch — dashboard shows nothing for real data.**
-   The dashboard queries the *synthetic* names emitted by `test_telemetry.py`;
-   real Claude Code emits different names:
+## ✅ Fixed this session (dashboard now renders real data)
+All five panels in `provisioning/dashboards/claude-code-analytics.json` were
+repointed from the synthetic metric names to the real Claude Code metrics, and
+legends changed from `{{user}}` to `{{user_email}}`:
 
-   | Dashboard queries (synthetic) | Real Claude Code metric |
-   |---|---|
-   | `claude_code_tokens_used_total` | `claude_code_token_usage_tokens_total` (label `type`) |
-   | `claude_code_sessions_total` | `claude_code_session_count_total` |
-   | `claude_code_estimated_cost_total` | `claude_code_cost_usage_USD_total` |
-   | `claude_code_suggestions_accepted_total` / `_rejected_total` | `claude_code_code_edit_tool_decision_total` (label `decision=accept\|reject`) |
+| Panel | New query |
+|---|---|
+| Token Use | `sum by (user_email) (last_over_time(claude_code_token_usage_tokens_total[$__range]))` |
+| Total Claude Sessions | `sum by (user_email) (last_over_time(claude_code_session_count_total[$__range]))` |
+| Claude Cost | `sum by (user_email) (last_over_time(claude_code_cost_usage_USD_total[$__range]))` |
+| Code Acceptance | `sum by (user_email) (last_over_time(claude_code_code_edit_tool_decision_total{decision="accept"}[$__range]))` |
+| Code Rejection | `sum by (user_email) (last_over_time(claude_code_code_edit_tool_decision_total{decision="reject"}[$__range]))` |
 
-   → Update the panel queries in `provisioning/dashboards/claude-code-analytics.json`
-   to the real names (and re-provision on the VM).
+**Why `last_over_time(...[$__range])` and not a plain `sum`:** real Claude Code
+tags every metric with a unique `session_id`, so each session is its own series.
+When a session ends, its series stops updating and goes stale — a plain
+`sum by (user_email)` instant query then only counts *currently-running* sessions
+(reads ~0 when nobody is active). `last_over_time(...[$__range])` grabs each
+session's final value across the panel's selected time range, so the stat/gauge
+panels total correctly across ended sessions. **Implication for Joe:** set the
+dashboard time range wide enough to cover the activity you want to see (e.g. 24h);
+a range shorter than the gap since last activity will read empty.
 
-2. **Label mismatch — legends will be blank.**
-   Panels use `legendFormat: "{{user}}"`, but real metrics carry `user_email`
-   (no `user` label). Change legends to `{{user_email}}`.
+Verified end-to-end via the Grafana datasource proxy — Token Use / Sessions /
+Cost / Acceptance all return real values; Rejection is legitimately empty until a
+real reject happens.
 
-3. **Accept/reject panel (panel-5) has no real data yet.**
-   `claude_code_code_edit_tool_decision_total` only appears once a session actually
-   accepts/rejects a file edit; the 3 verification sessions were read-only. Drive an
-   editing session to populate it.
+## Operational notes
+- **Scrape latency ~30–40s.** Metrics export every 10s (collector) but Prometheus
+  scrapes every 30s, so fresh activity takes up to ~40s to appear. Don't panic if a
+  brand-new session isn't on the dashboard for a few seconds.
+- **Grafana admin password** in `docker-compose.yml` is the literal placeholder
+  `<from-secrets-manager>` — never wired to a real secret. Works today but should be
+  fixed.
 
-4. **Config drift not fully captured in git.** The VM's `otel-collector-config.yaml`
-   was already ahead of the repo (Prometheus `resource_to_telemetry_conversion` +
-   `add_metric_suffixes:false`); the new telemetry `settings.json` env block is VM-only.
-   Decide whether to codify these (e.g. a documented `settings.json` template).
+## Remaining work
+1. **Codify config into the repo.** The VM's `otel-collector-config.yaml` is ahead of
+   the repo (Prometheus `resource_to_telemetry_conversion` + `add_metric_suffixes:false`),
+   and the telemetry `settings.json` env block that makes Claude Code export is VM-only.
+   Add a documented `settings.json` template / bootstrap so the setup is reproducible.
+2. **Populate the Rejection panel** by driving a session that rejects an edit
+   (`claude_code_code_edit_tool_decision_total{decision="reject"}`).
+3. **Retire the synthetic generator** (`test_telemetry.py`) — no longer needed now that
+   the dashboard reads real metrics; keep only for smoke-testing an empty stack.
 
 ## How to reproduce / drive more real data
 ```bash

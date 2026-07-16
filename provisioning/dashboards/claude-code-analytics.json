@@ -68,9 +68,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "editorMode": "builder",
-                        "expr": "claude_code_tokens_used_total",
+                        "expr": "sum by (user_email) (last_over_time(claude_code_token_usage_tokens_total[$__range]))",
                         "instant": false,
-                        "legendFormat": "{{user}}",
+                        "legendFormat": "{{user_email}}",
                         "range": true
                       },
                       "version": "v0"
@@ -153,8 +153,8 @@
                       "kind": "DataQuery",
                       "spec": {
                         "editorMode": "code",
-                        "expr": "claude_code_sessions_total",
-                        "legendFormat": "{{user}}",
+                        "expr": "sum by (user_email) (last_over_time(claude_code_session_count_total[$__range]))",
+                        "legendFormat": "{{user_email}}",
                         "range": true
                       },
                       "version": "v0"
@@ -237,8 +237,8 @@
                       "kind": "DataQuery",
                       "spec": {
                         "editorMode": "builder",
-                        "expr": "claude_code_estimated_cost_total",
-                        "legendFormat": "{{user}}",
+                        "expr": "sum by (user_email) (last_over_time(claude_code_cost_usage_USD_total[$__range]))",
+                        "legendFormat": "{{user_email}}",
                         "range": true
                       },
                       "version": "v0"
@@ -336,8 +336,8 @@
                       "kind": "DataQuery",
                       "spec": {
                         "editorMode": "builder",
-                        "expr": "claude_code_suggestions_accepted_total",
-                        "legendFormat": "{{user}}",
+                        "expr": "sum by (user_email) (last_over_time(claude_code_code_edit_tool_decision_total{decision=\"accept\"}[$__range]))",
+                        "legendFormat": "{{user_email}}",
                         "range": true
                       },
                       "version": "v0"
@@ -435,8 +435,8 @@
                       "kind": "DataQuery",
                       "spec": {
                         "editorMode": "builder",
-                        "expr": "claude_code_suggestions_rejected_total",
-                        "legendFormat": "{{user}}",
+                        "expr": "sum by (user_email) (last_over_time(claude_code_code_edit_tool_decision_total{decision=\"reject\"}[$__range]))",
+                        "legendFormat": "{{user_email}}",
                         "range": true
                       },
                       "version": "v0"
