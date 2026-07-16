@@ -65,7 +65,7 @@ activity, or panels read empty.
 ## Deployment
 - **VM:** EC2 `i-0aec393b021b5ef2c`, Ubuntu 24.04, us-east-1, `18.215.170.79`
 - **Grafana:** http://18.215.170.79:3000
-- **Repo:** https://github.com/bszczurko-sudo/claude-code-telemetry
+- **Repo:** https://github.com/edgebeamwireless/claude-code-telemetry
 - Full runbook: **DEPLOY.md** · Handoff status: **STATUS.md**
 
 ## Onboarding a client
@@ -93,5 +93,4 @@ test_telemetry.py               synthetic generator (smoke-test only; *.invalid 
 ## Remaining / follow-ups
 - Security triage Phase 2/3 (TLS, resource limits, container hardening,
   IMDSv2, per-client tokens, privacy/retention, IAM scoping, netseg).
-- Transfer repo to the edgebeamwireless GitHub org.
 - Publish the Confluence runbook.

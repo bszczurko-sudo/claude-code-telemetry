@@ -36,8 +36,8 @@ tickets). The repo is the source of truth; the VM tracks `origin/main`.
 ## Remaining work (Phase 2 / 3 — file as OPS-235 sub-tickets)
 - **Phase 2:** TLS/encrypted transport; resource limits + collector `memory_limiter`; container hardening (`no-new-privileges`, `cap_drop`, read-only, non-root); `update-sg.sh` safety hardening (CIDR validation, reject `/0`, authorize-before-revoke, IPv6, sts identity check); enforce IMDSv2 (IMDSv1 currently reachable).
 - **Phase 3:** per-client tokens/mTLS; privacy & retention (hash/drop emails+session IDs, Loki retention, EBS encryption, data-owner docs); scope IAM for the SG script; network segmentation (frontend/ingestion/backend docker networks).
-- Transfer repo to the edgebeamwireless GitHub org; publish the Confluence runbook.
+- Publish the Confluence runbook. (Repo transfer to the edgebeamwireless org: done.)
 
 ## Deploy / onboarding
 See **DEPLOY.md** (secrets, deploy, client onboarding, reboot recovery). Repo:
-https://github.com/bszczurko-sudo/claude-code-telemetry
+https://github.com/edgebeamwireless/claude-code-telemetry
