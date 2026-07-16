@@ -24,6 +24,21 @@ processors:
     check_interval: 5s
     limit_mib: 400
     spike_limit_mib: 100
+  # Privacy (OPS-408): replace the raw user.email resource attribute with the
+  # first 12 chars of its SHA256 hash before anything is stored. Users stay
+  # distinguishable (stable per-email hash) but the raw address isn't retained.
+  transform/hashemail:
+    error_mode: ignore
+    # user.email arrives as a DATAPOINT attribute (metrics) / log-record attribute
+    # (logs) — the Prometheus exporter turns those into labels directly.
+    metric_statements:
+      - context: datapoint
+        statements:
+          - set(attributes["user.email"], Substring(SHA256(attributes["user.email"]), 0, 12)) where attributes["user.email"] != nil
+    log_statements:
+      - context: log
+        statements:
+          - set(attributes["user.email"], Substring(SHA256(attributes["user.email"]), 0, 12)) where attributes["user.email"] != nil
   batch: {}
 
 exporters:
@@ -46,9 +61,9 @@ service:
   pipelines:
     metrics:
       receivers: [otlp]
-      processors: [memory_limiter, batch]
+      processors: [memory_limiter, transform/hashemail, batch]
       exporters: [prometheus]
     logs:
       receivers: [otlp]
-      processors: [memory_limiter, batch]
+      processors: [memory_limiter, transform/hashemail, batch]
       exporters: [otlp_http/loki]
