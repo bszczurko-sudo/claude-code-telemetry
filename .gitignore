@@ -1,3 +1,4 @@
 .env
 # Bitwarden Secrets Manager operator config (access token) — never commit
 .bws.env
+cron-telemetry.log

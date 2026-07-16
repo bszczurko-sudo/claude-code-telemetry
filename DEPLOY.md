@@ -79,6 +79,23 @@ Metrics take up to ~40s to appear (10s client export + 30s Prometheus scrape).
 Set the Grafana time range wide enough (e.g. 24h) — per-session series go stale
 (see STATUS.md).
 
+## Self-contained data generation (VM cron)
+So the dashboard shows a steady stream of REAL data without depending on any
+external client (e.g. a laptop), an hourly cron on the VM runs a tiny real
+Claude Code session. Telemetry config in `~/.claude/settings.json` makes that
+session export authenticated metrics to the local collector.
+
+- Script: `cron-telemetry.sh` (logs to `cron-telemetry.log`, kept to 500 lines)
+- Install (hourly):
+  ```bash
+  (crontab -l 2>/dev/null; echo "0 * * * * /home/ubuntu/claude-code-telemetry/cron-telemetry.sh") | crontab -
+  ```
+- Change frequency by editing the cron schedule (`crontab -e`). Each run uses a
+  small amount of API credit on the VM's logged-in Claude account.
+
+This is what lets the VM "stand on its own": stack + telemetry source + data
+generation all live on the VM; your Mac is only for operator access.
+
 ## Security-group access
 `update-sg.sh` reconciles `sg-0c10615c3983e2f47` to exactly: the operator's
 current IP (all ports) + every `team-ips.txt` entry (4317/4318 only). Re-run it
