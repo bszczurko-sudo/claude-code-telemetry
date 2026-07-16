@@ -1,3 +1,10 @@
+"""Synthetic telemetry generator.
+
+Emits the SAME metric names and attributes that real Claude Code emits
+(https://code.claude.com/docs/en/monitoring-usage), so the Grafana dashboard
+can be validated end-to-end without wiring up real clients. Once real clients
+push to the collector this script is no longer needed.
+"""
 import random
 import time
 from opentelemetry import metrics
@@ -11,25 +18,44 @@ provider = MeterProvider(metric_readers=[reader])
 metrics.set_meter_provider(provider)
 
 meter = metrics.get_meter("claude-code-test")
-token_counter = meter.create_counter("claude_code_tokens_used", description="Total tokens consumed")
-session_counter = meter.create_counter("claude_code_sessions", description="Total sessions initiated")
-cost_counter = meter.create_counter("claude_code_estimated_cost", description="Total cost incurred")
-acceptance_counter = meter.create_counter("claude_code_suggestions_accepted", description="Code suggestions accepted")
-rejection_counter = meter.create_counter("claude_code_suggestions_rejected", description="Code suggestions rejected")
-users = ["brett", "joseph", "alice", "bob", "charlie"]
+
+# Real Claude Code metric names (dots -> underscores in Prometheus).
+session_count = meter.create_counter("claude_code.session.count", description="CLI sessions started")
+token_usage = meter.create_counter("claude_code.token.usage", description="Tokens used")
+cost_usage = meter.create_counter("claude_code.cost.usage", description="Session cost in USD")
+edit_decision = meter.create_counter("claude_code.code_edit_tool.decision", description="Code edit permission decisions")
+
+users = [
+    "brett@edgebeamwireless.com",
+    "joseph@edgebeamwireless.com",
+    "don@edgebeamwireless.com",
+    "huseyin@edgebeamwireless.com",
+]
+model = "claude-sonnet-5"
 
 while True:
     user = random.choice(users)
-    tokens = random.randint(200, 1000)
-    cost = tokens * (3 / 1_000_000)  # $3 per million tokens, simplified
+    base = {"user.email": user, "model": model}
 
-    token_counter.add(tokens, {"user": user, "model": "claude-sonnet"})
-    cost_counter.add(cost, {"user": user, "model": "claude-sonnet"})
-    session_counter.add(1, {"user": user, "model": "claude-sonnet"})
-    suggestions = random.randint(1, 10)
-    accepted = random.randint(0, suggestions)
-    rejected = suggestions - accepted
+    session_count.add(1, {**base, "start_type": "fresh"})
 
-    acceptance_counter.add(accepted, {"user": user, "model": "claude-sonnet"})
-    rejection_counter.add(rejected, {"user": user, "model": "claude-sonnet"})
-    time.sleep (10)
+    # Token usage is reported split by type; cost derived from a realistic blended rate.
+    input_tokens = random.randint(2000, 8000)
+    output_tokens = random.randint(500, 3000)
+    token_usage.add(input_tokens, {**base, "type": "input"})
+    token_usage.add(output_tokens, {**base, "type": "output"})
+
+    cost = input_tokens * (3 / 1_000_000) + output_tokens * (15 / 1_000_000)
+    cost_usage.add(cost, {**base, "query_source": "main"})
+
+    # Code edit decisions (accept/reject) drive the acceptance-rate panel.
+    for _ in range(random.randint(1, 10)):
+        decision = "accept" if random.random() < 0.8 else "reject"
+        edit_decision.add(1, {
+            "user.email": user,
+            "decision": decision,
+            "tool_name": random.choice(["Edit", "Write"]),
+            "language": random.choice(["Python", "TypeScript", "YAML"]),
+        })
+
+    time.sleep(10)

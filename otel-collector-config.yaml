@@ -10,6 +10,13 @@ processors:
 exporters:
   prometheus:
     endpoint: 0.0.0.0:8889
+    # Turn OTLP resource attributes (user.email, service.*, custom OTEL_RESOURCE_ATTRIBUTES)
+    # into Prometheus labels so they are queryable.
+    resource_to_telemetry_conversion:
+      enabled: true
+    # Keep names deterministic: dots -> underscores, no unit/_total suffixes appended.
+    # e.g. claude_code.token.usage -> claude_code_token_usage
+    add_metric_suffixes: false
   otlp_http/loki:
     endpoint: http://loki:3100/otlp
 
