@@ -78,15 +78,30 @@ real reject happens.
   `<from-secrets-manager>` — never wired to a real secret. Works today but should be
   fixed.
 
+## ✅ Config codified + secret moved to Bitwarden (this session)
+The repo is now the source of truth; the VM was reset to `origin/main` (clean).
+- Pulled the VM's uncommitted working state into git: `datasources.yml` (adds Loki +
+  pins Prometheus uid `PBFA97CFB590B2093`), `otel-collector-config.yaml` (exporter
+  tweaks), `test_telemetry.py` (real metric names), and `CLAUDE.md`.
+- Grafana admin password no longer hardcoded. `docker-compose.yml` reads
+  `${GF_SECURITY_ADMIN_PASSWORD:?}`; `deploy.sh` injects it from **Bitwarden Secrets
+  Manager** (`bws`). Telemetry client config is codified in
+  `claude-code-telemetry-settings.json` + `bootstrap-claude-telemetry.sh`.
+- Full runbook in **DEPLOY.md**.
+
+### ⚠️ One manual step before the next VM deploy
+The stack is still *running* with the old password, but `docker compose` on the VM
+now requires the secret. Before the next `./deploy.sh`, someone with Bitwarden
+Secrets Manager access must (see DEPLOY.md §1–3): create the `bws` secret + machine
+account token, install `bws` on the VM, and create `~/claude-code-telemetry/.bws.env`.
+(Until then, inspect containers with `docker ps`, not `docker compose ps`.)
+
 ## Remaining work
-1. **Codify config into the repo.** The VM's `otel-collector-config.yaml` is ahead of
-   the repo (Prometheus `resource_to_telemetry_conversion` + `add_metric_suffixes:false`),
-   and the telemetry `settings.json` env block that makes Claude Code export is VM-only.
-   Add a documented `settings.json` template / bootstrap so the setup is reproducible.
-2. **Populate the Rejection panel** by driving a session that rejects an edit
+1. **Populate the Rejection panel** by driving a session that rejects an edit
    (`claude_code_code_edit_tool_decision_total{decision="reject"}`).
-3. **Retire the synthetic generator** (`test_telemetry.py`) — no longer needed now that
-   the dashboard reads real metrics; keep only for smoke-testing an empty stack.
+2. **Retire the synthetic generator** (`test_telemetry.py`) — optional; it now emits
+   real metric names and is handy for smoke-testing an empty stack.
+3. **Scrape latency / secret rotation** — minor ops items noted above.
 
 ## How to reproduce / drive more real data
 ```bash
