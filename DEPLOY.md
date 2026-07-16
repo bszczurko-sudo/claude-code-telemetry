@@ -114,5 +114,20 @@ So a `sudo reboot` (or an unexpected crash) needs no manual intervention.
 current IP (all ports) + every `team-ips.txt` entry (4317/4318 only). Re-run it
 whenever the operator's cellular IP rotates — it won't evict teammates.
 ```bash
-./update-sg.sh
+./update-sg.sh            # apply
+./update-sg.sh --dry-run  # preview changes
+./update-sg.sh --status   # show current rules
+```
+The script verifies it's running against AWS account `027654771904` before any
+change, validates every CIDR (rejects anything wider than /24 and `0.0.0.0/0`),
+and authorizes new rules before revoking stale ones (no lockout).
+
+### IAM: least-privilege for the SG script
+`update-sg.sh` needs only three EC2 actions, scoped to the one security group.
+The minimum policy is committed as **`iam-policy.json`**. Operators should run
+the script under a **dedicated IAM user or SSO role that has only this policy**
+attached — not broad/admin credentials. Apply it, e.g.:
+```bash
+aws iam put-user-policy --user-name <sg-operator> \
+  --policy-name telemetry-sg-manage --policy-document file://iam-policy.json
 ```

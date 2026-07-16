@@ -1,0 +1,19 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DescribeSecurityGroup",
+      "Effect": "Allow",
+      "Action": "ec2:DescribeSecurityGroups",
+      "Resource": "*",
+      "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
+    },
+    {
+      "Sid": "ModifyTelemetrySGIngress",
+      "Effect": "Allow",
+      "Action": ["ec2:AuthorizeSecurityGroupIngress", "ec2:RevokeSecurityGroupIngress"],
+      "Resource": "arn:aws:ec2:us-east-1:027654771904:security-group/sg-0c10615c3983e2f47",
+      "Condition": {"StringEquals": {"aws:RequestedRegion": "us-east-1"}}
+    }
+  ]
+}
