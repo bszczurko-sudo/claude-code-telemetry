@@ -28,6 +28,9 @@ services:
         limits:
           memory: 512M
           cpus: '0.5'
+    networks:
+      - ingestion
+      - backend
     depends_on: [prometheus, loki]
 
 # Prometheus - scrapes metrics from the OTel Collector and stores them
@@ -60,6 +63,8 @@ services:
         limits:
           memory: 512M
           cpus: '0.5'
+    networks:
+      - backend
 
 # Loki - receives log data pushed from the OTel Collector and stores it
 # Grafana queries Loki to visualize this data
@@ -82,6 +87,8 @@ services:
         limits:
           memory: 512M
           cpus: '0.5'
+    networks:
+      - backend
 
 # Grafana - dashboard UI that queries both Prometheus and Loki
 # to visualize usage, code acceptance rates, and cost
@@ -108,7 +115,18 @@ services:
         limits:
           memory: 512M
           cpus: '0.5'
+    networks:
+      - frontend
+      - backend
     depends_on: [prometheus, loki]
+
+# Segmented networks: only grafana is on frontend, only otel-collector is on
+# ingestion; backend carries all inter-service traffic (Grafana<->Prom/Loki,
+# Prom-scrape->collector, collector-push->Loki).
+networks:
+  frontend:
+  ingestion:
+  backend:
 
 volumes:
   prometheus_data:
