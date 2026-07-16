@@ -97,8 +97,9 @@ account token, install `bws` on the VM, and create `~/claude-code-telemetry/.bws
 (Until then, inspect containers with `docker ps`, not `docker compose ps`.)
 
 ## Remaining work
-1. **Populate the Rejection panel** by driving a session that rejects an edit
-   (`claude_code_code_edit_tool_decision_total{decision="reject"}`).
+1. ~~Populate the Rejection panel~~ **Done** — drove a real denied edit (temporary
+   `PreToolUse` deny hook on the VM) so `claude_code_code_edit_tool_decision_total{decision="reject"}`
+   = 1. All five panels now have real data. The hook was removed afterward.
 2. **Retire the synthetic generator** (`test_telemetry.py`) — optional; it now emits
    real metric names and is handy for smoke-testing an empty stack.
 3. **Scrape latency / secret rotation** — minor ops items noted above.
