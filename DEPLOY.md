@@ -96,6 +96,23 @@ session export authenticated metrics to the local collector.
 This is what lets the VM "stand on its own": stack + telemetry source + data
 generation all live on the VM; your Mac is only for operator access.
 
+## Surviving reboots / crashes
+The stack comes back automatically after a reboot or crash:
+- `docker` + `containerd` + `cron` are enabled on boot.
+- Every container is `restart: unless-stopped`, so running containers revive when
+  the Docker daemon restarts (with the token baked in from `.env`).
+- `telemetry-stack.service` (systemd) additionally runs `docker compose up -d` on
+  boot — this also recovers the stack if the containers were removed, and
+  re-applies `.env`. Install once:
+  ```bash
+  sudo cp telemetry-stack.service /etc/systemd/system/
+  sudo systemctl daemon-reload && sudo systemctl enable telemetry-stack.service
+  ```
+- Named volumes (`prometheus_data`, `loki_data`, `grafana_data`) persist all data.
+- The hourly `cron-telemetry.sh` job resumes on its own (cron is enabled on boot).
+
+So a `sudo reboot` (or an unexpected crash) needs no manual intervention.
+
 ## Security-group access
 `update-sg.sh` reconciles `sg-0c10615c3983e2f47` to exactly: the operator's
 current IP (all ports) + every `team-ips.txt` entry (4317/4318 only). Re-run it

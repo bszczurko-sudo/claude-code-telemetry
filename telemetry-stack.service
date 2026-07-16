@@ -1,0 +1,24 @@
+# systemd unit that brings the telemetry stack up on boot via docker compose.
+# Belt-and-suspenders on top of each container's restart:unless-stopped: this
+# also revives the stack if the containers were removed, and re-applies .env on
+# every boot. Install on the VM:
+#
+#   sudo cp telemetry-stack.service /etc/systemd/system/telemetry-stack.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable telemetry-stack.service
+#
+[Unit]
+Description=OPS-235 Claude Code telemetry stack (docker compose)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ubuntu/claude-code-telemetry
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose stop
+
+[Install]
+WantedBy=multi-user.target

@@ -20,11 +20,16 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    volumes: 
+    volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     ports: ["9090:9090"]
     restart: unless-stopped
+    # admin API enables series deletion (9090 is NOT in the SG, so VM-local only).
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-admin-api
 
 # Loki - receives log data pushed from the OTel Collector and stores it
 # Grafana queries Loki to visualize this data
