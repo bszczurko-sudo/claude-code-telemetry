@@ -109,6 +109,9 @@ services:
       - GF_SERVER_ROOT_URL=https://telemetry.edgebeam.dev
       - GF_SECURITY_COOKIE_SECURE=true
       - GF_SECURITY_STRICT_TRANSPORT_SECURITY=true
+      # read_only rootfs can't accept bundled-plugin auto-updates; the failed
+      # install otherwise triggers a restart loop. We only use Prometheus + Loki.
+      - GF_PLUGINS_PREINSTALL_DISABLED=true
     security_opt:
       - no-new-privileges:true
     cap_drop:
