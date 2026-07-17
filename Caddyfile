@@ -1,0 +1,8 @@
+telemetry.edgebeam.dev {
+    handle /v1/* {
+        reverse_proxy otel-collector:4318
+    }
+    handle {
+        reverse_proxy grafana:3000
+    }
+}

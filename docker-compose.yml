@@ -8,10 +8,10 @@ services:
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
-    # 4317/4318 are the OTLP ingest ports (SG-allowlisted clients). 8889 (the
-    # Prometheus exporter) is scraped by Prometheus over the docker network, so
-    # it is NOT published to the host.
-    ports: ["4317:4317", "4318:4318"]
+    # 4317 (gRPC) stays public for direct gRPC clients. 4318 (HTTP) is bound to
+    # loopback — external HTTP OTLP goes through Caddy TLS at /v1/* -> 4318.
+    # 8889 (Prometheus exporter) is scraped over the docker network, not published.
+    ports: ["4317:4317", "127.0.0.1:4318:4318"]
     restart: unless-stopped
     # Shared ingest token for OTLP bearer-token auth (see .env / .env.example).
     # :? fails fast so the collector never starts with auth effectively disabled.
@@ -97,7 +97,8 @@ services:
   grafana:
     image: grafana/grafana:13.1.0@sha256:121a7a9ece6dc10b969f1f96eed64b4f07dfac0d0b8abc070f7cb83bbde86f63
     user: "472"
-    ports: ["3000:3000"]
+    # Loopback only — Grafana is reached externally via Caddy TLS (telemetry.edgebeam.dev).
+    ports: ["127.0.0.1:3000:3000"]
     volumes:
        - grafana_data:/var/lib/grafana
        - ./provisioning/:/etc/grafana/provisioning:ro
@@ -105,6 +106,9 @@ services:
     # :? fails fast if unset — otherwise Grafana silently falls back to admin/admin.
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?set a strong Grafana admin password in .env}
+      - GF_SERVER_ROOT_URL=https://telemetry.edgebeam.dev
+      - GF_SECURITY_COOKIE_SECURE=true
+      - GF_SECURITY_STRICT_TRANSPORT_SECURITY=true
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -122,9 +126,41 @@ services:
       - backend
     depends_on: [prometheus, loki]
 
+# Caddy - public TLS reverse proxy (Let's Encrypt). Terminates HTTPS for
+# telemetry.edgebeam.dev and proxies /v1/* -> otel-collector:4318, else grafana:3000.
+  caddy:
+    image: caddy:2-alpine
+    user: "1000"
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_certs:/config
+    networks:
+      - frontend
+      - ingestion
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+    depends_on: [grafana, otel-collector]
+
 # Segmented networks: only grafana is on frontend, only otel-collector is on
 # ingestion; backend carries all inter-service traffic (Grafana<->Prom/Loki,
-# Prom-scrape->collector, collector-push->Loki).
+# Prom-scrape->collector, collector-push->Loki). Caddy bridges frontend+ingestion.
 networks:
   frontend:
   ingestion:
@@ -134,3 +170,5 @@ volumes:
   prometheus_data:
   loki_data:
   grafana_data:
+  caddy_data:
+  caddy_certs:

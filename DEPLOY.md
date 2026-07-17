@@ -33,6 +33,34 @@ Note: Grafana only reads `GF_SECURITY_ADMIN_PASSWORD` on **first** volume init.
 To rotate the admin password later, edit `.env` **and** run:
 `docker compose exec grafana grafana cli admin reset-admin-password <new>`.
 
+## TLS / public HTTPS (Caddy — OPS-405)
+`caddy` terminates TLS for **https://telemetry.edgebeam.dev** (Let's Encrypt,
+auto-renewed) and reverse-proxies `/v1/*` → `otel-collector:4318` and everything
+else → `grafana:3000`. Grafana (3000) and OTLP-HTTP (4318) are bound to
+**loopback**; external access is via Caddy only. Direct gRPC (4317) stays public.
+
+Requirements / gotchas:
+- **DNS**: `telemetry.edgebeam.dev` must resolve to the VM's public IP.
+- **Security group**: ports **80 and 443 must be open to `0.0.0.0/0`** for ACME
+  validation + public HTTPS. These are managed **outside `update-sg.sh`** (which
+  rejects `0.0.0.0/0` and only reconciles 22/3000/4317/4318) — add once with:
+  ```bash
+  aws ec2 authorize-security-group-ingress --group-id sg-0c10615c3983e2f47 --region us-east-1 \
+    --ip-permissions 'IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0}]' \
+                     'IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=0.0.0.0/0}]'
+  ```
+- **Caddy runs as uid 1000** with `read_only` rootfs; its `caddy_data`/`caddy_certs`
+  named volumes must be owned by 1000 or cert storage fails. On first bring-up:
+  ```bash
+  docker volume create claude-code-telemetry_caddy_data
+  docker volume create claude-code-telemetry_caddy_certs
+  docker run --rm -v claude-code-telemetry_caddy_data:/data \
+    -v claude-code-telemetry_caddy_certs:/config alpine \
+    chown -R 1000:1000 /data /config
+  ```
+- The SG still allows 3000 to the operator IP but nothing listens there publicly
+  now (Grafana is loopback) — harmless; can be removed from the allowlist.
+
 ---
 
 ## Authentication model
